@@ -3,7 +3,6 @@ state.py
 
 the shared memory of the system.
 every agent reads from this and writes back to it.
-we add more fields in later steps.
 """
 
 from typing import Annotated, TypedDict
@@ -17,21 +16,27 @@ class Finding(TypedDict):
 def merge_findings(old: dict, new: dict) -> dict:
     """
     a reducer: tells langgraph how to combine updates to the same field.
-
-    5 research agents run at once, and each returns {"findings": {its_subtopic: ...}}.
-    without this, langgraph doesn't know which one to keep and throws an error.
-    with this, it merges them all into one dict.
+    many research agents return findings at once, this merges them into one dict.
+    a redo of a subtopic overwrites its old finding.
     """
     return {**(old or {}), **(new or {})}
 
 
 class State(TypedDict):
-    topic: str                                            # what the user typed, e.g. "RAG"
-    subtopics: list[str]                                  # filled by the list agent
-    findings: Annotated[dict[str, Finding], merge_findings]  # filled by research agents, merged
+    topic: str                                               # what the user typed
+    subtopics: list[str]                                     # list agent
+    findings: Annotated[dict[str, Finding], merge_findings]  # research agents
+    rejected: list[str]                                      # reviewer: subtopics to redo
+    feedback: dict[str, str]                                 # reviewer: what to fix, per subtopic
+    attempts: int                                            # reviewer: how many reviews so far
+    subject: str                                             # mail agent
+    body: str                                                # mail agent
+    approved: bool                                           # you, at the approval step
+    sent: int                                                # send step
 
 
 class ResearchTask(TypedDict):
     """the small input each parallel research agent gets. not the whole state."""
     topic: str
     subtopic: str
+    feedback: str  # empty on the first try, the reviewer's note on a redo

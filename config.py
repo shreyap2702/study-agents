@@ -19,6 +19,8 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 
 GMAIL_ADDRESS = os.getenv("GMAIL_ADDRESS", "")
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD", "")
+# true = show the email but don't send it. set DRY_RUN=false in .env to really send.
+DRY_RUN = os.getenv("DRY_RUN", "true").lower() == "true"
 
 
 def check_keys() -> bool:

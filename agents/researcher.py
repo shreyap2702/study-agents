@@ -2,12 +2,15 @@
 agents/researcher.py
 
 the research agent.
-input:  state["topic"], state["subtopics"]
-output: state["findings"]
+each copy of this agent researches ONE subtopic.
+the graph starts one copy per subtopic, all in parallel.
+
+input:  a ResearchTask {topic, subtopic}
+output: state["findings"] (just its own subtopic)
 """
 
 from llm import llm
-from state import State
+from state import ResearchTask
 from tools import web_search
 
 PROMPT = """you are writing one section of a study digest for students in an AI cohort.
@@ -43,12 +46,13 @@ def research_one(topic: str, subtopic: str) -> dict:
     }
 
 
-def research_agent(state: State) -> dict:
-    """research every subtopic, one after another."""
-    findings = {}
+def research_agent(task: ResearchTask) -> dict:
+    """research one subtopic. many of these run at the same time."""
+    subtopic = task["subtopic"]
 
-    for subtopic in state["subtopics"]:
-        print(f"\n[research agent] researching: {subtopic}")
-        findings[subtopic] = research_one(state["topic"], subtopic)
+    print(f"[research agent] start: {subtopic}")
+    finding = research_one(task["topic"], subtopic)
+    print(f"[research agent] done:  {subtopic}")
 
-    return {"findings": findings}
+    # only return this agent's own piece. the reducer merges all of them.
+    return {"findings": {subtopic: finding}}
